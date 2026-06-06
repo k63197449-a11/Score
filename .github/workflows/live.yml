@@ -2,11 +2,11 @@ name: 123
 
 on:
   schedule:
-    - cron: '*/5 * * * *' # প্রতি ৫ মিনিট পর পর স্বয়ংক্রিয়ভাবে রান হবে
-  workflow_dispatch: # ম্যানুয়ালি টেস্ট করার জন্য বাটন
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
 
 jobs:
-  update-stream:
+  realtime-stream:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
@@ -24,24 +24,13 @@ jobs:
         npm install axios
         pip install edge-tts
 
-    - name: Fetch Current Score
-      run: |
-        node fetch-score.js
-
-    - name: Generate Realistic Bangla Voice (5-Min Loop Ready)
-      run: |
-        # মাইক্রোসফটের প্রদীপ নিউরাল ভয়েস দিয়ে একদম মানুষের মতো কমেন্ট্রি তৈরি হবে
-        edge-tts --voice bn-IN-PradeepNeural --text "$(cat score.txt)" --write-media commentary.mp3
-
-    - name: Render 5-Min Video & Push to YouTube
+    - name: Run Realtime Live Engine
       env:
         YT_STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
       run: |
-        # -t 300 দিয়ে ঠিক ৫ মিনিটের (৩০০ সেকেন্ড) লাইভ স্ট্রিম সেট করা হয়েছে
-        # -stream_loop -1 এর কারণে ৫ মিনিটের ভিডিওতে কমেন্ট্রিটি বারবার লুপ আকারে বাজবে
-        ffmpeg -f lavfi -i "testsrc=size=1080x1920:rate=30,format=yuv420p" \
-        -stream_loop -1 -i commentary.mp3 \
-        -vf "geq=r='12+sin(2*PI*X/W+T)*15':g='20+cos(2*PI*Y/H+T)*15':b='40+sin(T)*10',drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:textfile=score.txt:x=(w-tw)/2:y=(h-th)/2:fontcolor=white:fontsize=40:box=1:boxcolor=black@0.7:boxborderw=20,format=yuv420p" \
-        -c:v libx264 -profile:v main -preset veryfast -b:v 2500k -maxrate 2500k -bufsize 5000k -t 300 \
-        -c:a aac -b:a 128k -ar 44100 \
-        -f flv "rtmp://a.rtmp.youtube.com/live2/$YT_STREAM_KEY"
+        # প্রথমবার রান হওয়ার জন্য একটি বেসিক ফাইল তৈরি করে রাখা
+        echo "লাইভ স্কোর লোড হচ্ছে..." > score.txt
+        edge-tts --voice bn-IN-PradeepNeural --text "লাইভ স্কোর লোড হচ্ছে" --write-media commentary.mp3
+        
+        # আমাদের রিয়েলটাইম পাইথন ইঞ্জিন চালু করা
+        python stream.py
