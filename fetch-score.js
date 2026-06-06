@@ -11,22 +11,23 @@ async function getLiveScore() {
         if (response.data && response.data.matches && response.data.matches.length > 0) {
             const liveMatch = response.data.matches[0]; 
             
-            const matchName = liveMatch.title || "Live Match";
-            const team1 = liveMatch.team1 || "Team 1";
-            const team2 = liveMatch.team2 || "Team 2";
-            const score1 = liveMatch.team1Score || "0/0";
-            const score2 = liveMatch.team2Score || "0/0";
-            const status = liveMatch.status || "Match in progress";
+            const matchName = liveMatch.title || "লাইভ ম্যাচ";
+            const team1 = liveMatch.team1 || "প্রথম দল";
+            const team2 = liveMatch.team2 || "দ্বিতীয় দল";
+            const score1 = liveMatch.team1Score || "০ রান";
+            const score2 = liveMatch.team2Score || "০ রান";
+            const status = liveMatch.status || "খেলা চলছে";
 
-            const finalScoreText = `🎯 ${matchName}\n🏏 ${team1}: ${score1} vs ${team2}: ${score2}\n📢 Status: ${status}`;
+            // এআই ভয়েস যেন সুন্দর করে বাংলায় রিড করতে পারে তার ফরম্যাট
+            const finalScoreText = `সুপ্রিয় দর্শক, খেলায় আপনাকে স্বাগতম। বর্তমানে চলছে, ${matchName}। ${team1} এর বর্তমান স্কোর ${score1}। অপরদিকে ${team2} এর স্কোর ${score2}। সর্বশেষ আপডেট অনুযায়ী, ${status}।`;
             
             fs.writeFileSync('score.txt', finalScoreText);
-            console.log('Score updated successfully!');
+            console.log('Voice Text Generated!');
         } else {
-            fs.writeFileSync('score.txt', 'No Live Match Available Right Now.');
+            fs.writeFileSync('score.txt', 'এই মুহূর্তে কোনো ম্যাচ লাইভ নেই। পরবর্তী আপডেটের জন্য আমাদের সাথেই থাকুন। ধন্যবাদ।');
         }
     } catch (error) {
-        fs.writeFileSync('score.txt', '🔄 Refreshing Live Score...');
+        fs.writeFileSync('score.txt', 'লাইভ স্কোর আপডেট করা হচ্ছে। দয়া করে একটু অপেক্ষা করুন।');
     }
 }
 
