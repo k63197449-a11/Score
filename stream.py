@@ -23,12 +23,13 @@ while time.time() - start_time < 300:
     # ১. নতুন স্কোর ফেচ করা
     os.system('node fetch-score.js')
     
-    # ২. স্কোর খালি থাকলে এরর এড়ানোর জন্য সেফটি চেক
+    # ২. ফাইল থেকে সরাসরি ভয়েস জенারেট করা (১০০% সেফ মেথড)
     if os.path.exists('score.txt') and os.path.getsize('score.txt') > 0:
-        os.system('edge-tts --voice bn-IN-PradeepNeural --text "$(cat score.txt)" --write-media commentary.mp3')
+        os.system('edge-tts --voice bn-IN-PradeepNeural --file score.txt --write-media commentary.mp3')
     else:
-        os.system('echo "লাইভ স্কোর আপডেট হচ্ছে।" > score.txt')
-        os.system('edge-tts --voice bn-IN-PradeepNeural --text "লাইভ স্কোর আপডেট হচ্ছে" --write-media commentary.mp3')
+        with open('score.txt', 'w', encoding='utf-8') as f:
+            f.write("লাইভ স্কোর আপডেট হচ্ছে।")
+        os.system('edge-tts --voice bn-IN-PradeepNeural --file score.txt --write-media commentary.mp3')
         
     time.sleep(30)
 
