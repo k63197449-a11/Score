@@ -1,9 +1,9 @@
-name: 123 
+name: 123
 
 on:
   schedule:
-    - cron: '*/5 * * * *' # প্রতি ৫ মিনিট পর পর শর্ট টাস্ক রান হবে
-  workflow_dispatch: # টেস্ট করার জন্য ম্যানুয়াল বাটন
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
 
 jobs:
   update-stream:
@@ -36,11 +36,10 @@ jobs:
       env:
         YT_STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
       run: |
-        # FFmpeg মাত্র ১৫ সেকেন্ডের একটি ভিডিও জেনারেট করবে (-t 15)
-        # এবং এটি সরাসরি লাইভে পুশ করেই গিটহাবের টাস্ক বন্ধ হয়ে যাবে (সম্পূর্ণ সেফ)
+        # এখানে ফিল্টারের শেষে ,format=yuv420p যোগ করা হয়েছে যা প্রোফাইল এররটি ফিক্স করবে
         ffmpeg -f lavfi -i "testsrc=size=1080x1920:rate=30,format=yuv420p" \
         -stream_loop -1 -i commentary.mp3 \
-        -vf "geq=r='12+sin(2*PI*X/W+T)*15':g='20+cos(2*PI*Y/H+T)*15':b='40+sin(T)*10',drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:textfile=score.txt:x=(w-tw)/2:y=(h-th)/2:fontcolor=white:fontsize=40:box=1:boxcolor=black@0.7:boxborderw=20" \
+        -vf "geq=r='12+sin(2*PI*X/W+T)*15':g='20+cos(2*PI*Y/H+T)*15':b='40+sin(T)*10',drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:textfile=score.txt:x=(w-tw)/2:y=(h-th)/2:fontcolor=white:fontsize=40:box=1:boxcolor=black@0.7:boxborderw=20,format=yuv420p" \
         -c:v libx264 -profile:v main -preset fast -b:v 2500k -t 15 \
         -c:a aac -b:a 128k -ar 44100 \
         -f flv "rtmp://a.rtmp.youtube.com/live2/$YT_STREAM_KEY"
