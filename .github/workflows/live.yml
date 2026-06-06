@@ -1,4 +1,4 @@
-name: 123
+name: 123 
 
 on:
   schedule:
@@ -29,17 +29,17 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y ffmpeg
         npm install axios
-        pip install edge-tts
+        pip install gTTS
 
     - name: Run Realtime Live Engine
       env:
         YT_STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
       run: |
-        # বাংলা লেখা সরাসরি কম্যান্ডে না দিয়ে প্রথমে ফাইলে সেভ করা হচ্ছে (এরর এড়ানোর জন্য)
-        echo "খেলা শুরু হতে যাচ্ছে, একটু অপেক্ষা করুন।" > score.txt
+        # শুরুতে একটি ডিফল্ট ফাইল তৈরি করে রাখা হচ্ছে
+        echo "Live score is updating..." > score.txt
         
-        # ফাইল থেকে রিড করার জন্য --file অপশন ব্যবহার করা হলো
-        edge-tts --voice bn-IN-PradeepNeural --file score.txt --write-media commentary.mp3
+        # প্রথমবার রান হওয়ার জন্য একটি বেসিক ভয়েস ফাইল জেনারেট করা
+        python -c "from gtts import gTTS; text = open('score.txt', 'r').read(); tts = gTTS(text=text, lang='en'); tts.save('commentary.mp3')"
         
         # আমাদের রিয়েলটাইম পাইথন ইঞ্জিন চালু করা
         python stream.py
