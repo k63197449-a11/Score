@@ -1,11 +1,12 @@
-name: 123 test
+name: 123 
+
 on:
   schedule:
-    - cron: '*/5 * * * *'
-  workflow_dispatch:
+    - cron: '*/5 * * * *' # প্রতি ৫ মিনিট পর পর শর্ট টাস্ক রান হবে
+  workflow_dispatch: # টেস্ট করার জন্য ম্যানুয়াল বাটন
 
 jobs:
-  stream:
+  update-stream:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
@@ -16,30 +17,30 @@ jobs:
       with:
         node-version: '18'
 
-    - name: Install Dependencies & gTTS
+    - name: Install Tools
       run: |
         sudo apt-get update
         sudo apt-get install -y ffmpeg
         npm install axios
         pip install gTTS
 
-    - name: Fetch Live Score
+    - name: Fetch Current Score
       run: |
         node fetch-score.js
 
-    - name: Generate Voice Commentary (TTS)
+    - name: Generate Bangla Voice
       run: |
         python -c "from gtts import gTTS; text = open('score.txt', 'r').read(); tts = gTTS(text=text, lang='bn'); tts.save('commentary.mp3')"
 
-    - name: Create 9:16 Visual & Start Live Stream
+    - name: Render 15-Sec Video & Push to YouTube
       env:
         YT_STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
       run: |
-        # FFmpeg নিজে থেকেই ১০৮০x১৯২০ (৯:১৬) সাইজের একটি কালারফুল ভিজ্যুয়াল তৈরি করবে
-        # এবং সেটির ওপর স্ক্রিপ্টের স্কোর ও তৈরি হওয়া বাংলা ভয়েস একসাথে ব্লেন্ড করে লাইভ পাঠাবে
+        # FFmpeg মাত্র ১৫ সেকেন্ডের একটি ভিডিও জেনারেট করবে (-t 15)
+        # এবং এটি সরাসরি লাইভে পুশ করেই গিটহাবের টাস্ক বন্ধ হয়ে যাবে (সম্পূর্ণ সেফ)
         ffmpeg -f lavfi -i "testsrc=size=1080x1920:rate=30,format=yuv420p" \
         -stream_loop -1 -i commentary.mp3 \
         -vf "geq=r='12+sin(2*PI*X/W+T)*15':g='20+cos(2*PI*Y/H+T)*15':b='40+sin(T)*10',drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:textfile=score.txt:x=(w-tw)/2:y=(h-th)/2:fontcolor=white:fontsize=40:box=1:boxcolor=black@0.7:boxborderw=20" \
-        -c:v libx264 -profile:v main -preset veryfast -b:v 2500k -maxrate 2500k -bufsize 5000k \
+        -c:v libx264 -profile:v main -preset fast -b:v 2500k -t 15 \
         -c:a aac -b:a 128k -ar 44100 \
         -f flv "rtmp://a.rtmp.youtube.com/live2/$YT_STREAM_KEY"
