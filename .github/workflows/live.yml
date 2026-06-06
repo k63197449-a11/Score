@@ -35,9 +35,11 @@ jobs:
       env:
         YT_STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
       run: |
-        # ফাইল খালি থাকার এরর দূর করতে শুরুতেই একটি ডিফল্ট টেক্সট লিখে রাখা হচ্ছে
+        # বাংলা লেখা সরাসরি কম্যান্ডে না দিয়ে প্রথমে ফাইলে সেভ করা হচ্ছে (এরর এড়ানোর জন্য)
         echo "খেলা শুরু হতে যাচ্ছে, একটু অপেক্ষা করুন।" > score.txt
-        edge-tts --voice bn-IN-PradeepNeural --text "খেলা শুরু হতে যাচ্ছে" --write-media commentary.mp3
+        
+        # ফাইল থেকে রিড করার জন্য --file অপশন ব্যবহার করা হলো
+        edge-tts --voice bn-IN-PradeepNeural --file score.txt --write-media commentary.mp3
         
         # আমাদের রিয়েলটাইম পাইথন ইঞ্জিন চালু করা
         python stream.py
