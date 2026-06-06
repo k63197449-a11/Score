@@ -1,4 +1,4 @@
-123
+name: 123 test
 on:
   schedule:
     - cron: '*/5 * * * *'
@@ -29,16 +29,17 @@ jobs:
 
     - name: Generate Voice Commentary (TTS)
       run: |
-        # score.txt ফাইলের লেখাটিকে বাংলায় মুখে বলার জন্য অডিও ফাইলে রূপান্তর করবে
         python -c "from gtts import gTTS; text = open('score.txt', 'r').read(); tts = gTTS(text=text, lang='bn'); tts.save('commentary.mp3')"
 
-    - name: Start Live Stream to YouTube
+    - name: Create 9:16 Visual & Start Live Stream
       env:
         YT_STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
       run: |
-        # ৯:১৬ ভিডিও এবং কোডের তৈরি করা বাংলা ভয়েস একসাথে ব্লেন্ড করে লাইভ স্ট্রিম
-        ffmpeg -re -stream_loop -1 -i bg-video.mp4 -stream_loop -1 -i commentary.mp3 \
-        -vf "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:textfile=score.txt:x=(w-tw)/2:y=h-300:fontcolor=white:fontsize=36:box=1:boxcolor=black@0.6:boxborderw=10,scale=1080:1920" \
-        -c:v libx264 -profile:v main -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k \
+        # FFmpeg নিজে থেকেই ১০৮০x১৯২০ (৯:১৬) সাইজের একটি কালারফুল ভিজ্যুয়াল তৈরি করবে
+        # এবং সেটির ওপর স্ক্রিপ্টের স্কোর ও তৈরি হওয়া বাংলা ভয়েস একসাথে ব্লেন্ড করে লাইভ পাঠাবে
+        ffmpeg -f lavfi -i "testsrc=size=1080x1920:rate=30,format=yuv420p" \
+        -stream_loop -1 -i commentary.mp3 \
+        -vf "geq=r='12+sin(2*PI*X/W+T)*15':g='20+cos(2*PI*Y/H+T)*15':b='40+sin(T)*10',drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:textfile=score.txt:x=(w-tw)/2:y=(h-th)/2:fontcolor=white:fontsize=40:box=1:boxcolor=black@0.7:boxborderw=20" \
+        -c:v libx264 -profile:v main -preset veryfast -b:v 2500k -maxrate 2500k -bufsize 5000k \
         -c:a aac -b:a 128k -ar 44100 \
         -f flv "rtmp://a.rtmp.youtube.com/live2/$YT_STREAM_KEY"
