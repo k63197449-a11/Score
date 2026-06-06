@@ -1,0 +1,39 @@
+
+123
+on:
+  schedule:
+    - cron: '*/5 * * * *' # প্রতি ৫ মিনিট পর পর স্ক্রিপ্টটি চেক করবে স্ট্রিম সচল আছে কিনা
+  workflow_dispatch: # ম্যানুয়ালি স্টার্ট করার জন্য
+
+jobs:
+  stream:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js (For Auto Score Fetching)
+      uses: actions/setup-node@v3
+      with:
+        node-on-version: '18'
+
+    - name: Install FFmpeg & Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+        npm install axios
+
+    - name: Fetch Live Score & Update Overlay
+      run: |
+        node fetch-score.js
+
+    - name: Start 24/7 Live Stream to YouTube
+      env:
+        YT_STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
+      run: |
+        # ৯:১৬ ভিডিও, ব্যাকগ্রাউন্ড মিউজিক এবং লাইভ স্কোর টেক্সট একসাথে ইউটিউবে লাইভ করার কমান্ড
+        ffmpeg -re -stream_loop -1 -i bg-video.mp4 -stream_loop -1 -i bg-music.mp3 \
+        -vf "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:textfile=score.txt:x=(w-tw)/2:y=h-300:fontcolor=white:fontsize=36:box=1:boxcolor=black@0.6:boxborderw=10,scale=1080:1920" \
+        -c:v libx264 -profile:v main -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k \
+        -c:a aac -b:a 128k -ar 44100 \
+        -f flv "rtmp://a.rtmp.youtube.com/live2/$YT_STREAM_KEY"
