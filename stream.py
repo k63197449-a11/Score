@@ -2,14 +2,11 @@ import os
 import time
 import subprocess
 
-# ইউটিউব স্ট্রিম কি গিটহাব এনভায়রনমেন্ট থেকে নেবে
 stream_key = os.environ.get('YT_STREAM_KEY')
 rtmp_url = f"rtmp://a.rtmp.youtube.com/live2/{stream_key}"
 
 print("Starting Realtime 5-Minute Stream Loop...")
 
-# এফএফমপেগ কম্যান্ড যা ব্যাকগ্রাউন্ডে ৩২০ সেকেন্ড (প্রায় ৫ মিনিট) রান করবে
-# এটি প্রতি মুহূর্তে score.txt এবং commentary.mp3 ফাইল রিড করবে লাইভ অবস্থায়
 ffmpeg_cmd = [
     'ffmpeg', '-y', '-f', 'lavfi', '-i', 'testsrc=size=1080x1920:rate=30,format=yuv420p',
     '-stream_loop', '-1', '-re', '-i', 'commentary.mp3',
@@ -18,19 +15,21 @@ ffmpeg_cmd = [
     '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-f', 'flv', rtmp_url
 ]
 
-# লাইভ স্ট্রিম ব্যাকগ্রাউন্ডে স্টার্ট করা হলো
 process = subprocess.Popen(ffmpeg_cmd)
 
-# এই ৫ মিনিটের লুপের ভেতরে প্রতি ৩০ সেকেন্ড পর পর স্কোর ও ভয়েস আপডেট হবে রিয়েলটাইম!
 start_time = time.time()
 while time.time() - start_time < 300:
     print("Checking for realtime score updates...")
     # ১. নতুন স্কোর ফেচ করা
     os.system('node fetch-score.js')
-    # ২. নতুন রিয়েলটাইম ভয়েস জেনারেট করা
-    os.system('edge-tts --voice bn-IN-PradeepNeural --text "$(cat score.txt)" --write-media commentary.mp3')
     
-    time.sleep(30) # ৩০ সেকেন্ড পর পর আপডেট করবে
+    # ২. স্কোর খালি থাকলে এরর এড়ানোর জন্য সেফটি চেক
+    if os.path.exists('score.txt') and os.path.getsize('score.txt') > 0:
+        os.system('edge-tts --voice bn-IN-PradeepNeural --text "$(cat score.txt)" --write-media commentary.mp3')
+    else:
+        os.system('echo "লাইভ স্কোর আপডেট হচ্ছে।" > score.txt')
+        os.system('edge-tts --voice bn-IN-PradeepNeural --text "লাইভ স্কোর আপডেট হচ্ছে" --write-media commentary.mp3')
+        
+    time.sleep(30)
 
-# ৫ মিনিট শেষ হলে প্রসেস বন্ধ হবে এবং পরবর্তী গিটহাব শিডিউল আবার নতুন লুপ শুরু করবে
 process.wait()
