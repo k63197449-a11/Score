@@ -1,5 +1,4 @@
 name: 123
-
 on:
   schedule:
     - cron: '*/5 * * * *'
@@ -11,6 +10,14 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
+
+    - name: Auto Clean Git Garbage & Cache
+      run: |
+        echo "Cleaning up repository cache and junk..."
+        # গিটহাবের রানার সার্ভারের সব পুরানো অবশিষ্টাংশ এবং ক্যাশ মেমোরি ডিলেট করার কমান্ড
+        git gc --prune=now
+        git clean -fdx || true
+        rm -f score.txt commentary.mp3 || true
 
     - name: Setup Node.js & Python
       uses: actions/setup-node@v3
@@ -27,6 +34,7 @@ jobs:
     - name: Run Realtime Live Engine
       env:
         YT_STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # প্রথমবার রান হওয়ার জন্য একটি বেসিক ফাইল তৈরি করে রাখা
         echo "লাইভ স্কোর লোড হচ্ছে..." > score.txt
@@ -34,3 +42,10 @@ jobs:
         
         # আমাদের রিয়েলটাইম পাইথন ইঞ্জিন চালু করা
         python stream.py
+
+    - name: Final Wipe Out
+      if: always()
+      run: |
+        echo "Final cleanup before job ends..."
+        # স্ক্রিপ্ট শেষ হওয়ার সাথে সাথে তৈরি হওয়া সব টেম্পোরারি ফাইল উধাও করে দেবে
+        rm -rf *.mp3 *.txt node_modules package-lock.json || true
